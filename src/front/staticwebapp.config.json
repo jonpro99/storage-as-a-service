@@ -15,16 +15,10 @@
 		"rolesSource": "/api/Roles",
 		"identityProviders": {
 			"azureActiveDirectory": {
-				"userDetailsClaim": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
 				"registration": {
-					"openIdIssuer": "https://login.microsoftonline.com/__AZURE_TENANT_ID__",
+					"openIdIssuer": "https://login.microsoftonline.com/__AZURE_TENANT_ID__/v2.0",
 					"clientIdSettingName": "AZURE_CLIENT_ID",
 					"clientSecretSettingName": "AZURE_CLIENT_SECRET"
-				},
-				"login": {
-					"loginParameters": [
-						"resource=api://473582c9-51bf-4f60-871f-c35d84b9b802"
-					]
 				}
 			}
 		}
