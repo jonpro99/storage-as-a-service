@@ -39,4 +39,4 @@ jobs:
           app-name: 'fx-saasbyofwin-test-eastus2-03'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_77F1E4D0658445D6BA9786CA9DBAE648 }}
+          publish-profile: ${{ secrets.FUNCTION_PUBLISH_PROFILE }}
