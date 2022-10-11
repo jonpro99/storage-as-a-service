@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import React, { useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import useAuthentication from '../../hooks/useAuthentication'
@@ -11,7 +14,7 @@ import Selector from '../Selector'
 import Table from 'react-bootstrap/Table'
 import DetailsIcon from '@mui/icons-material/InfoTwoTone'
 import EditIcon from '@mui/icons-material/EditOutlined'
-import '../DirectoriesTable/DirectoriesTable.css'
+import './FileSystemsPage.css'
 import StorageExplorerIcon from '../../images/storage-explorer.svg'
 import IconButton from "@mui/material/IconButton"
 import Tooltip from '@mui/material/Tooltip'
@@ -24,6 +27,8 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import DirectoryDetails from '../DirectoryDetails'
 import ConnectDetails from '../ConnectDetails/ConnnectDetails'
+import PageLoader from '../PageLoader/PageLoader'
+
 
 /**
  * Renders list of Storage Accounts and FileSystems
@@ -39,6 +44,7 @@ const FileSystemsPage = ({ strings }) => {
 	const [storageAccounts, setStorageAccounts] = useState([])
 	const [fileSystems, setFileSystems] = useState([])
 	const [toastMessage, setToastMessage] = useState()
+	const [loading, setLoading] = useState(false)
 	const [isToastOpen, setToastOpen] = useState(false)
 	const [toastSeverity, setToastSeverity] = useState('success')
 
@@ -46,12 +52,14 @@ const FileSystemsPage = ({ strings }) => {
 	useEffect(() => {
 		const retrieveAccountsAndFileSystems = async () => {
 			try {
-				const _storageAccounts = await getStorageAccounts()
+				setLoading(true);
+				let _storageAccounts = await getStorageAccounts()
+				_storageAccounts = _storageAccounts.map((a) => ({...a, concatenatedName : `${a.friendlyName} (${a.storageAccountName})`}));
 				setStorageAccounts(_storageAccounts)
 
 				if (_storageAccounts.length > 0) {
 					// Set the first storage account retrieved from the API as the selected one
-					setSelectedStorageAccount(_storageAccounts[0])
+					setSelectedStorageAccount(_storageAccounts[0].storageAccountName)
 					displayToast(strings.accountsLoaded)
 				}
 				else {
@@ -75,8 +83,10 @@ const FileSystemsPage = ({ strings }) => {
 
 		const populateFileSystems = async (storageAccount) => {
 			try {
+				setLoading(true);
 				const _fileSystems = await getFileSystems(storageAccount)
 				setFileSystems(_fileSystems)
+				setLoading(false);
 
 				if (_fileSystems.length > 0) {
 					displayToast(strings.containersLoaded)
@@ -131,7 +141,9 @@ const FileSystemsPage = ({ strings }) => {
 	// Emit HTML
 	return (
 		<>
+
 			<Container>
+			<PageLoader state={loading} />
 				<Grid container spacing={2} sx={{ justifyContent: 'center', marginBottom: '10px' }}>
 					<Grid item md={6}>
 						<Selector
@@ -140,6 +152,8 @@ const FileSystemsPage = ({ strings }) => {
 							label={strings.storageAccountLabel}
 							onChange={handleStorageAccountChange}
 							selectedItem={selectedStorageAccount}
+							textProperty={'concatenatedName'}
+							valueProperty={'storageAccountName'}
 						/>
 					</Grid>
 					<Grid item>
@@ -150,13 +164,13 @@ const FileSystemsPage = ({ strings }) => {
 										{strings.fileSystemsPage.containerLabel}
 									</th>
 									<th>
-										{strings.fileSystemsPage.spaceUsedLabel}
+										Owners
 									</th>
 									<th>
-										{strings.fileSystemsPage.monthlyCostLabel}
+										Contributors
 									</th>
 									<th>
-										{strings.fileSystemsPage.whoHasAccessLabel}
+										Readers
 									</th>
 									<th>
 										{strings.fileSystemsPage.fundCodeLabel}
@@ -173,15 +187,22 @@ const FileSystemsPage = ({ strings }) => {
 											<td className='name'>
 												{row.name}
 											</td>
-											<td className='spaceused'>
-												{row.metadata.Size}
-											</td>
-											<td className='costs'>
-												{row.metadata.Cost}
+											<td className='owner'>
+												<table><tbody>
+													{row.access.filter(ac => { return ac.roleName === 'Owner' })
+																.map(ac => { return <tr key={rowCount++}><td>{ac.principalName}</td></tr> })}
+												</tbody></table>
 											</td>
 											<td className='owner'>
 												<table><tbody>
-													{row.access.map(ac => { return (<tr key={rowCount++}><td>{ac.roleName}</td><td>{ac.principalName}</td></tr>) })}
+													{row.access.filter(ac => { return ac.roleName === 'Contributor' })
+																.map(ac => { return <tr key={rowCount++}><td>{ac.principalName}</td></tr> })}
+												</tbody></table>
+											</td>
+											<td className='owner'>
+												<table><tbody>
+													{row.access.filter(ac => { return ac.roleName === 'Reader' })
+																.map(ac => { return <tr key={rowCount++}><td>{ac.principalName}</td></tr> })}
 												</tbody></table>
 											</td>
 											<td className='fundcode'>
@@ -189,10 +210,16 @@ const FileSystemsPage = ({ strings }) => {
 											</td>
 											<td className='actions'>
 												{onEdit && <EditIcon onClick={() => onEdit(row)} className='action' />}
-												{onDetails && <Tooltip arrow title="Open details" placement='top'><DetailsIcon onClick={() => onDetails(row)} className='action' /></Tooltip>}
+												{onDetails &&
+													<Tooltip arrow title="Open details" placement='top'>
+														<DetailsIcon onClick={() => onDetails(row)} className='action' />
+													</Tooltip>
+												}
 												<Tooltip arrow title={strings.fileSystemsPage.openInStorageExplorerLabel} placement='top'>
-													<IconButton aria-label={strings.fileSystemsPage.openInStorageExplorerLabel} size='small' onClick={() => { window.open(row.storageExplorerDirectLink); return false }}>
-														<img src={StorageExplorerIcon} title={strings.fileSystemsPage.openInStorageExplorerLabel} alt={strings.fileSystemsPage.openInStorageExplorerLabel} />
+													<IconButton aria-label={strings.fileSystemsPage.openInStorageExplorerLabel} size='small'
+																onClick={() => { window.open(row.storageExplorerDirectLink); return false }}>
+														<img src={StorageExplorerIcon} title={strings.fileSystemsPage.openInStorageExplorerLabel}
+															 alt={strings.fileSystemsPage.openInStorageExplorerLabel} />
 													</IconButton>
 												</Tooltip>
 											</td>

@@ -1,23 +1,19 @@
-﻿using System.Linq;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
-namespace Microsoft.UsEduCsu.Saas.Services
+using System.Linq;
+
+namespace Microsoft.UsEduCsu.Saas.Services;
+
+internal static class Extensions
 {
-	internal static class Extensions
+	public static bool AnyNull(params object[] args)
 	{
-		public static bool AnyNull(params object[] args)
-		{
-			return args.Any(x => x == null);
-		}
-
-		public static bool AnyNullOrEmpty(params object[] args)
-		{
-			return args.Any(x => x == null || string.IsNullOrEmpty(x.ToString()));
-		}
+		return args.Any(x => x == null);
 	}
 
-	public class Result
+	public static bool AnyNullOrEmpty(params object[] args)
 	{
-		public bool Success { get; set; }
-		public string Message { get; set; }
+		return args.Any(x => x == null || string.IsNullOrEmpty(x.ToString()));
 	}
 }
